@@ -1,0 +1,45 @@
+#include <stm32l1xx.h>
+#include <stm32l1xx_gpio.h>
+#include <stm32l1xx_rcc.h>
+#include <stm32l1xx_tim.h>
+int a;
+
+int main (void)
+{
+
+RCC->AHBENR =  0x00000003 ;                 /* Enable GPIOB  */
+RCC->APB1ENR = 0x00000002 ;                /* Selecting TIM3    */
+RCC->CR         =    0x00000003 ;
+RCC->CFGR        =    0x00000001;
+
+
+//GPIOB->MODER   &=  ~(0x0000F000);
+GPIOB->MODER  = (0x00005000);             /* General purpose output mode*/
+//GPIOB_OTYPER  &=  ~(0x000000C0);             /* Output push-pull */
+//GPIOB_OSPEEDR &=  ~(0x0000F000);
+//GPIOB_PUPDR   &=  ~(0x0000F000);
+
+TIM_PrescalerConfig (TIM3,0x00FF,TIM_PSCReloadMode_Update); 
+TIM_SetAutoreload (TIM3,0x7fff);  // Auto Reload register 7fff
+TIM_CounterModeConfig ( TIM3,TIM_CounterMode_Up);
+TIM_ARRPreloadConfig (TIM3,ENABLE); 
+TIM_GenerateEvent (TIM3,TIM_EventSource_Update);
+TIM3->CR1 = 0x0001;// Direction/Timer run
+
+while(1)
+{
+a=TIM3->SR&&0x01;
+while(a)
+{
+
+TIM3->EGR = 0X0001;
+TIM3->SR &= ~(0XFF);
+
+GPIO_ToggleBits(GPIOB,GPIO_Pin_7);
+GPIO_ToggleBits(GPIOB,GPIO_Pin_6);
+
+a=0;
+
+}
+}
+}

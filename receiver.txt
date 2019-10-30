@@ -1,0 +1,80 @@
+#include<stm32l1xx.h>
+#include<stm32l1xx_gpio.h>
+#include<stm32l1xx_rcc.h>
+#include<stm32l1xx_usart.h>
+
+char a[100]=" if u want on the led press y else n ";
+char b[100]=" do u want conti... y/n";
+char choice,ther;
+int i;
+int main()
+	{
+	GPIO_InitTypeDef usart;
+	USART_InitTypeDef usrt3;
+	GPIO_InitTypeDef ledint;
+	//USART_ClockInitTypeDef usartclk;
+	RCC_SYSCLKConfig(RCC_SYSCLKSource_MSI);	
+	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB,ENABLE);
+	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOC,ENABLE);
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART3,ENABLE);
+	
+	GPIO_PinAFConfig(GPIOC,GPIO_PinSource10,GPIO_AF_USART3);	
+	GPIO_PinAFConfig(GPIOC,GPIO_PinSource11,GPIO_AF_USART3);
+		
+	usart.GPIO_Pin = GPIO_Pin_10|GPIO_Pin_11; 
+	usart.GPIO_Mode=GPIO_Mode_AF ;
+	usart.GPIO_Speed=GPIO_Speed_400KHz ;
+	usart.GPIO_OType=GPIO_OType_PP;
+	usart.GPIO_PuPd=GPIO_PuPd_UP;
+	GPIO_Init(GPIOC,&usart);
+
+  ledint.GPIO_Pin = GPIO_Pin_6 |GPIO_Pin_7; 
+	ledint.GPIO_Mode=GPIO_Mode_OUT;
+	ledint.GPIO_Speed=GPIO_Speed_400KHz;		
+	 GPIO_Init(GPIOB,&ledint);	
+//usartclk.USART_Clock = USART_Clock_Enable;
+	
+	usrt3.USART_BaudRate = 9600;
+	usrt3.USART_WordLength = USART_WordLength_8b;
+	usrt3.USART_StopBits = USART_StopBits_1;
+	usrt3.USART_Mode = USART_Mode_Tx|USART_Mode_Rx;
+  usrt3.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
+	USART_Init(USART3,&usrt3);
+// USART_ClockInit(USART3,&usartclk);
+	USART_Cmd(USART3,ENABLE);	
+do{
+		
+		for(i=0;a[i]!='\0';i++)
+		{
+	USART_SendData(USART3,(unsigned int)a[i]);
+	
+	while( USART_GetFlagStatus(USART3,USART_FLAG_TC)== RESET);
+		}
+		//while( USART_GetFlagStatus(USART3,USART_FLAG_TC)== RESET);
+		while(USART_GetFlagStatus(USART3,USART_FLAG_RXNE)== RESET);
+		ther=  USART_ReceiveData(USART3);
+		USART_SendData(USART3,(unsigned int)ther);
+		while( USART_GetFlagStatus(USART3,USART_FLAG_TC)== RESET);
+	if(ther=='y'){
+			GPIO_SetBits(GPIOB,GPIO_Pin_6);
+			GPIO_ResetBits(GPIOB,GPIO_Pin_7);
+		}
+		else{
+			GPIO_SetBits(GPIOB,GPIO_Pin_7);
+			GPIO_ResetBits(GPIOB,GPIO_Pin_6);
+		}
+	
+		for(i=0;b[i]!='\0';i++)
+		{
+	USART_SendData(USART3,(unsigned int)b[i]);
+	
+	while( USART_GetFlagStatus(USART3,USART_FLAG_TC)== RESET);
+		}	
+		while( USART_GetFlagStatus(USART3,USART_FLAG_RXNE)== RESET);
+		choice= (char) USART_ReceiveData(USART3);
+		USART_SendData(USART3,(unsigned int)choice);
+		while( USART_GetFlagStatus(USART3,USART_FLAG_TC)== RESET);
+}while(choice =='y');
+
+}
+	

@@ -1,0 +1,80 @@
+#include"stm32l1xx.h"
+#include"stm32l1xx_rcc.h"
+#include"stm32l1xx_usart.h"
+#include"stm32l1xx_gpio.h"
+#include"misc.h"
+
+void delay()
+{
+	long int i;
+	for(i=0;i<100000;i++);
+}
+int i;
+char str='C';
+
+int main()
+{
+
+NVIC_InitTypeDef nvic;
+GPIO_InitTypeDef GPIO_port,led;
+USART_InitTypeDef uperi;
+	
+RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB,ENABLE);
+RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART3,ENABLE);
+
+
+led.GPIO_Pin=	GPIO_Pin_6|GPIO_Pin_7;
+led.GPIO_Mode=GPIO_Mode_OUT;
+GPIO_Init(GPIOB,&led);
+	
+GPIO_port.GPIO_Pin=GPIO_Pin_10|GPIO_Pin_11;
+GPIO_port.GPIO_Mode=GPIO_Mode_AF;
+	
+GPIO_port.GPIO_Speed=GPIO_Speed_400KHz;
+GPIOB->OTYPER=0X00000000;
+GPIO_Init(GPIOB,&GPIO_port);
+
+  GPIO_PinAFConfig(GPIOB,GPIO_PinSource11,GPIO_AF_USART3); // configuring af mode rx
+  GPIO_PinAFConfig(GPIOB,GPIO_PinSource10,GPIO_AF_USART3); // configuring af mode tx
+	
+uperi.USART_BaudRate=9600;
+uperi.USART_WordLength=USART_WordLength_8b;
+uperi.USART_StopBits=USART_StopBits_1;
+uperi.USART_Mode=USART_Mode_Rx|USART_Mode_Tx;
+USART_Init(USART3, &uperi);	
+USART_Cmd(USART3, ENABLE);
+
+USART_ITConfig(USART3, USART_IT_RXNE, ENABLE);
+
+nvic.NVIC_IRQChannel=USART3_IRQn;
+nvic.NVIC_IRQChannelPreemptionPriority=0;
+nvic.NVIC_IRQChannelSubPriority=0;
+nvic.NVIC_IRQChannelCmd=ENABLE;
+NVIC_Init(&nvic);
+
+while(1)
+	{
+	GPIO_SetBits(GPIOB,GPIO_Pin_6);	//BLINK BLUE ALWAYS
+		
+	USART_SendData(USART3,USART3->DR);
+	}
+	}	
+
+	
+void USART3_IRQHandler(void)
+{
+if(USART_GetITStatus(USART3, USART_IT_RXNE) != RESET)
+{
+  USART_ReceiveData(USART3);
+	GPIO_SetBits(GPIOB,GPIO_Pin_7);	//BLINK YELLOW IF RECEIVED DATA
+	delay();
+	GPIO_ResetBits(GPIOB,GPIO_Pin_7);	
+	//USART_SendData(USART3,USART3->DR);
+}
+}
+
+
+
+	
+	
+	

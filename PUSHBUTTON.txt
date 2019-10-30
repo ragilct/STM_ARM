@@ -1,0 +1,27 @@
+
+#include <stm32l1xx.h>
+#include <stm32l1xx_gpio.h>
+#include <stm32l1xx_rcc.h>
+
+
+int main(void)
+{
+	
+
+RCC->AHBENR=(0x00000003);
+GPIOB->MODER =(0x00005000);
+
+	
+	GPIOA->MODER &=~(0x0000000F);
+	GPIOA->MODER |= (0x00000000); 			//Alternate function
+	GPIO_SetBits(GPIOB,GPIO_Pin_6);
+	GPIO_ResetBits(GPIOB,GPIO_Pin_7);
+	while(1)
+	{
+     while(GPIOA->IDR&=0x00000001)
+		 {
+ GPIO_ToggleBits(GPIOB,GPIO_Pin_6|GPIO_Pin_7);
+			 while(GPIOA->IDR&=(0x00000001));
+		}
+	}
+}
